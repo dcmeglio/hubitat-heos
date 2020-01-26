@@ -48,6 +48,14 @@ def initialize() {
 	}
 }
 
+def verifyAccount() {
+	log.debug "verifying HEOS account"
+	telnetClose()
+	connectToHeos()
+	state.verifyAccountOnly = true
+	runIn(5,loginHeosAccount)
+}
+
 def getHeosSearchCriteria()
 {
 	state.searchCriteria = [:]
@@ -72,14 +80,29 @@ def parse(message) {
 	def json = parseJson(message)
 	logDebug "Telnet Message: ${json}"
 	
-	if (json.heos.result == "success" || json.heos.result == null) {
+	if (json.heos.result == "fail" && json.heos.command == "system/sign_in" && state.verifyAccountOnly) {
+		updateDataValue("accountVerified", "false")
+		telnetClose()
+	}
+	else if (json.heos.result == "success" || json.heos.result == null) {
 		if (json.heos.command == "player/get_players") {
 			parent.distributeMessage(json.heos.command, json.payload)
 			registerHeosChangeEvents()
 		}
 		else if (json.heos.command == "system/sign_in") {
-			if (json.heos.message.startsWith("signed_in")) {
-				queryHeosPlayers()
+			if (!json.heos.message.contains("command under process")) {
+				if (!state.verifyAccountOnly) {
+					if (json.heos.message.startsWith("signed_in")) {
+						queryHeosPlayers()
+					}
+				}
+				else {
+					if (json.heos.message.startsWith("signed_in"))
+						updateDataValue("accountVerified", "true")
+					else 
+						updateDataValue("accountVerified", "false")
+					telnetClose()
+				}
 			}
 		}  
 		else if (json.heos.command == "event/player_now_playing_progress") {
@@ -200,7 +223,8 @@ def parseHeosQueryString(queryString) {
 	def result = [:]
 	for (kvp in queryKvp) {
 		def splitVals = kvp.split("=")
-		result."${splitVals[0]}" = splitVals[1]
+		if (splitVals.size() == 2)
+			result."${splitVals[0]}" = splitVals[1]
 	}
 	return result
 }

@@ -26,7 +26,7 @@ You will be able to control mute/unmute, volume, next/previous track, play/pause
 | TuneIn       | Station                        |
 
 ## Limitations
-Currently there is no validation on the HEOS username/password you enter. If you enter it incorrectly things simply will not work properly. Please ensure it is set correctly.
+If device IPs change, this is not currently supported.
 
 ## Revision History
 * 2020.01.26 - Initial Release
