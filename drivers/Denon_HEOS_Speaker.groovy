@@ -8,7 +8,7 @@ metadata {
 		capability "Initialize"
 		
 		command "playTopResult", [[name:"Source*","type":"ENUM","description":"Source","constraints":["Rhapsody", "TuneIn", "Deezer", "Napster", "iHeartRadio", "Soundcloud", "Tidal", "Amazon Music"]],
-		[name:"Type*","type":"ENUM","description":"Type","constraints":["Station", "Artist", "Album", "Track", "Playlists"]],
+		[name:"Type*","type":"ENUM","description":"Type","constraints":["Station", "Artist", "Album", "Track", "Playlist"]],
 		[name:"Search*","type":"STRING",description:"Search"]]
     }
 }
@@ -111,8 +111,38 @@ def parse(message) {
 		}
 		else if (json.heos.command == "browse/browse") {
 			if (!json.heos.message.startsWith("command under process")) {
-				def sid = parseHeosQueryString(json.heos.message).sid.toInteger()
-				state.browseCriteria[sid] = json.payload
+				def msgParams = parseHeosQueryString(json.heos.message)
+				def sid = msgParams.sid.toInteger()
+				if (!msgParams.cid)
+					state.browseCriteria[sid] = json.payload
+				else {
+					def cid = msgParams.cid
+					def pid = msgParams.pid
+					for (container in json.payload) {
+						
+						
+						if (container.playable == "yes") {
+							def containerName = java.net.URLDecoder.decode(container?.name?.toLowerCase(), "UTF-8")
+							log.debug "${containerName} --- ${state.searchString}"
+							if (containerName.contains(state.searchString))
+							{
+								state.searchString = null
+								sendHeosMessage("heos://browse/play_stream?pid=${pid}&sid=${sid}&cid=${cid}&mid=${container.mid}&name=${container.name}")
+								break
+							}
+						}
+					}
+				}
+			}
+		}
+		else if (json.heos.command == "browse/search") {
+			if (!json.heos.message.startsWith("command under process")) {
+				for (container in json.payload) {
+					if (container.playable == "yes") {
+						sendHeosMessage("heos://browse/play_stream?pid=${pid}&sid=${sid}&cid=${cid}&mid=${container.mid}&name=${container.name}")
+						break
+					}
+				}
 			}
 		}
 	}
@@ -297,23 +327,42 @@ def refresh() {
 	sendHeosMessage("heos://player/get_mute?pid=${pid}")
 }
 
-def playTopResult(source, type, search) {
-	def sources = 
-	["Rhapsody":2, "TuneIn":3, "Deezer":5, "Napster":6, "iHeartRadio":7, "Soundcloud":9, "Tidal":10, "Amazon Music":13]
-	
-	def sid = sources[source]
-	
-	if (source == "Amazon Music") {
+def internalPlayTopResult(pid, source, type, search) {
+	if (getDataValue("master") == "true") {
+		def sources = 
+		["Rhapsody":2, "TuneIn":3, "Deezer":5, "Napster":6, "iHeartRadio":7, "Soundcloud":9, "Tidal":10, "Amazon Music":13]
+		
+		def sid = sources[source]
+		
+		if (source == "Amazon Music") {
+			def cid = getCidBySourceAndType(sid, type)
+			if (cid != null) {
+				state.searchString = search.toLowerCase()
+				sendHeosMessage("heos://browse/browse?sid=${sid}&cid=${cid}&pid=${pid}")
+			}
+			else
+				log.error "${type} search not supported by ${source}"
+		}
+		else {
+			def scid = getScidBySourceAndType(sid, type)
+			if (scid != null) {
+				state.searchString = null
+				sendHeosMessage("heos://browse/search?sid=${sid}&search=${search}&scid=${scid}&pid=${pid}")
+			}
+			else
+				log.error "${type} search not supported by ${source}"
+		}
 	}
 	else {
-		def scid = getScidBySourceAndType(sid, type)
-		if (scid != null) {
-			sendHeosMessage("heos://browse/search?sid=${sid}&search=${search}&scid=${scid}")
-		}
-		else
-			log.error "${type} search not supported by ${source}"
+		parent.playTopResult(pid, source, type, search)
 	}
+}
 
+def playTopResult(source, type, search) {
+	def pid = getDataValue("pid")
+	
+	internalPlayTopResult(pid, source, type, search)
+	
 }
 
 def getScidBySourceAndType(sid, type) {
@@ -321,6 +370,20 @@ def getScidBySourceAndType(sid, type) {
 	{
 		if (criteria.name == type)
 			return criteria.scid
+	}
+	return null
+}
+
+def getCidBySourceAndType(sid, type) {
+	
+	if (type == "Station")
+		type = "Prime Stations"
+	else if (type == "Playlist")
+		type = "Playlists"
+	for (container in state.browseCriteria."$sid")
+	{
+		if (container.name == type)
+			return container.cid
 	}
 	return null
 }

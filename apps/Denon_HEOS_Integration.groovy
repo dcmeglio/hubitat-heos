@@ -6,7 +6,7 @@
  *  Copyright 2020 Dominick Meglio
  *
  * Revision History
- * v 2020.01.02 - Initial Release
+ * v 2020.01.26 - Initial Release
  *
  */
 
@@ -180,6 +180,16 @@ def sendHeosMessage(msg) {
 		def isMaster = device.getDataValue("master")
 		if (isMaster == "true") {
 			return device.sendHeosMessage(msg)
+		}
+	}
+}
+
+def playTopResult(pid, source, type, search) {
+	for (device in getChildDevices())
+	{
+		def isMaster = device.getDataValue("master")
+		if (isMaster == "true") {
+			return device.internalPlayTopResult(pid, source, type, search)
 		}
 	}
 }
