@@ -10,6 +10,8 @@ metadata {
 		command "playTopResult", [[name:"Source*","type":"ENUM","description":"Source","constraints":["Rhapsody", "TuneIn", "Deezer", "Napster", "iHeartRadio", "Soundcloud", "Tidal", "Amazon Music"]],
 		[name:"Type*","type":"ENUM","description":"Type","constraints":["Station", "Artist", "Album", "Track", "Playlist"]],
 		[name:"Search*","type":"STRING",description:"Search"]]
+		command "playPreset", [[name:"Preset*","type":"NUMBER",description:"Preset"]]
+		command "playInput", [[name:"Input*","type":"ENUM","description":"Input","constraints":["aux_in_1", "aux_in_2", "aux_in_3", "aux_in_4", "aux_single", "aux1", "aux2", "aux3", "aux4", "aux5", "aux6", "aux7", "line_in_1", "line_in_2", "line_in_3", "line_in_4", "coax_in_1", "coax_in_2", "optical_in_1", "optical_in_2", "hdmi_in_1", "hdmi_in_2", "hdmi_in_3", "hdmi_in_4", "hdmi_arc_1", "cable_sat", "dvd", "bluray", "game", "mediaplayer", "cd", "tuner", "hdradio", "tvaudio", "phono", "usbdac", "analog"]]]
     }
 }
 
@@ -363,6 +365,18 @@ def playTopResult(source, type, search) {
 	
 	internalPlayTopResult(pid, source, type, search)
 	
+}
+
+def playPreset(preset) {
+	def pid = getDataValue("pid")
+	
+	sendHeosMessage("heos://browse/play_preset?pid=${pid}&preset=${preset}")
+}
+
+def playInput(input) {
+	def pid = getDataValue("pid")
+	
+	sendHeosMessage("heos://browse/play_input?pid=${pid}&input=inputs/${input}")
 }
 
 def getScidBySourceAndType(sid, type) {
