@@ -141,10 +141,21 @@ def distributeMessage(command, payload) {
 			}
 		}
 	}
-	else if (command == "event/player_state_changed") {
+	else if (command == "event/player_state_changed" || command == "player/get_play_state") {
 		def device = findDeviceByPid(payload.pid)
 		
 		device.sendEvent(name:"status", value: payload.state)
+	}
+	else if (command == "player/get_volume") {
+		def device = findDeviceByPid(payload.pid)
+		device.sendEvent(name:"volume", value: payload.level.toInteger())
+	}
+	else if (command == "player/get_mute") {
+		def device = findDeviceByPid(payload.pid)
+		if (payload.state == "on") 
+			device.sendEvent(name: "mute", value: "muted")
+		else if (payload.state == "off")
+			device.sendEvent(name: "mute", value: "unmuted")
 	}
 	else if (command == "event/player_volume_changed") {
 		def device = findDeviceByPid(payload.pid)

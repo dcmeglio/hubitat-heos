@@ -6,6 +6,10 @@ metadata {
 		capability "Refresh"
 		capability "SpeechSynthesis"
 		capability "Initialize"
+		
+		command "playTopResult", [[name:"Source*","type":"ENUM","description":"Source","constraints":["Rhapsody", "TuneIn", "Deezer", "Napster", "iHeartRadio", "Soundcloud", "Tidal", "Amazon Music"]],
+		[name:"Type*","type":"ENUM","description":"Type","constraints":["Station", "Artist", "Album", "Track", "Playlists"]],
+		[name:"Search*","type":"STRING",description:"Search"]]
     }
 }
 
@@ -38,7 +42,23 @@ def initialize() {
 	{
 		connectToHeos()
 		runIn(5,loginHeosAccount)
+		runIn(5, getHeosSearchCriteria)
 	}
+}
+
+def getHeosSearchCriteria()
+{
+	state.searchCriteria = [:]
+	state.browseCriteria = [:]
+	sendHeosMessage("heos://browse/get_search_criteria?sid=2")
+	sendHeosMessage("heos://browse/get_search_criteria?sid=3")
+	sendHeosMessage("heos://browse/get_search_criteria?sid=5")
+	sendHeosMessage("heos://browse/get_search_criteria?sid=6")
+	sendHeosMessage("heos://browse/get_search_criteria?sid=7")
+	sendHeosMessage("heos://browse/get_search_criteria?sid=9")
+	sendHeosMessage("heos://browse/get_search_criteria?sid=10")
+	sendHeosMessage("heos://browse/browse?sid=13")
+	 
 }
 
 def connectToHeos() {
@@ -69,8 +89,31 @@ def parse(message) {
 			json.payload << parseHeosQueryString(json.heos.message)
 			parent.distributeMessage(json.heos.command, json.payload)
 		}
+		else if (json.heos.command == "player/get_mute") {
+			json.payload = parseHeosQueryString(json.heos.message)
+			parent.distributeMessage(json.heos.command, json.payload)
+		}
+		else if (json.heos.command == "player/get_volume") {
+			json.payload = parseHeosQueryString(json.heos.message)
+			parent.distributeMessage(json.heos.command, json.payload)
+		}
+		else if (json.heos.command == "player/get_play_state") {
+			json.payload = parseHeosQueryString(json.heos.message)
+			parent.distributeMessage(json.heos.command, json.payload)
+		}
 		else if (json.heos.command.startsWith("event/")) {
-			parent.distributeMessage(json.heos.command,parseHeosQueryString(json.heos.message))
+			if (json.heos.message != null)
+				parent.distributeMessage(json.heos.command,parseHeosQueryString(json.heos.message))
+		}
+		else if (json.heos.command == "browse/get_search_criteria") {
+			def sid = parseHeosQueryString(json.heos.message).sid.toInteger()
+			state.searchCriteria[sid] = json.payload
+		}
+		else if (json.heos.command == "browse/browse") {
+			if (!json.heos.message.startsWith("command under process")) {
+				def sid = parseHeosQueryString(json.heos.message).sid.toInteger()
+				state.browseCriteria[sid] = json.payload
+			}
 		}
 	}
 	else {
@@ -252,7 +295,34 @@ def refresh() {
 	sendHeosMessage("heos://player/get_now_playing_media?pid=${pid}")
 	sendHeosMessage("heos://player/get_volume?pid=${pid}")
 	sendHeosMessage("heos://player/get_mute?pid=${pid}")
+}
 
+def playTopResult(source, type, search) {
+	def sources = 
+	["Rhapsody":2, "TuneIn":3, "Deezer":5, "Napster":6, "iHeartRadio":7, "Soundcloud":9, "Tidal":10, "Amazon Music":13]
+	
+	def sid = sources[source]
+	
+	if (source == "Amazon Music") {
+	}
+	else {
+		def scid = getScidBySourceAndType(sid, type)
+		if (scid != null) {
+			sendHeosMessage("heos://browse/search?sid=${sid}&search=${search}&scid=${scid}")
+		}
+		else
+			log.error "${type} search not supported by ${source}"
+	}
+
+}
+
+def getScidBySourceAndType(sid, type) {
+	for (criteria in state.searchCriteria."$sid")
+	{
+		if (criteria.name == type)
+			return criteria.scid
+	}
+	return null
 }
 
 def clearQueue() {
