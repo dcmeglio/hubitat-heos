@@ -107,6 +107,10 @@ def discoverHeosDevices() {
 		logDebug "Finished discovery"
 }
 
+def detectHeosDeviceChanges() {
+	sendHubCommand(new hubitat.device.HubAction("lan discovery urn:schemas-denon-com:device:ACT-Denon:1", hubitat.device.Protocol.LAN))
+}
+
 def ssdpHandler(evt) {
     def description = evt.description
 
@@ -124,6 +128,24 @@ def ssdpHandler(evt) {
     if (!devices."${ipString}") {
         devices << ["${ipString}": parsedEvent]
     }
+	
+	// Detect if the IP address has changed
+	for (ssdpDeviceDetails in devices) {
+		if (ssdpDeviceDetails.value.ssdpUSN == parsedEvent.ssdpUSN) {
+			if (ssdpDeviceDetails.key != ipString) {
+				logDebug "Detected an IP change from ${ssdpDeviceDetails.key} to ${ipString}"
+				devices.remove(ssdpDeviceDetails.key)
+				def heDevice = getChildDevice("heos:"+ssdpDeviceDetails.value.mac)
+				if (heDevice) {
+					heDevice.setDeviceDetails(ipString, 1255)
+					if (heDevice.getDataValue("master") == "true") {
+						heDevice.initialize()
+					}
+				}
+				break
+			}
+		}
+	}
 }
 
 void verifyHeosDevices() {
@@ -274,6 +296,8 @@ def initialize() {
 	createChildDevices()
 	
 	deleteTempAccountVerifier()
+	
+	runEvery5Minutes("detectHeosDeviceChanges")
 }
 
 def deleteTempAccountVerifier() {

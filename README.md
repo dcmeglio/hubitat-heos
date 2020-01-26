@@ -25,8 +25,5 @@ You will be able to control mute/unmute, volume, next/previous track, play/pause
 | Tidal        | Artist, Album, Track, Playlist |
 | TuneIn       | Station                        |
 
-## Limitations
-If device IPs change, this is not currently supported.
-
 ## Revision History
 * 2020.01.26 - Initial Release
