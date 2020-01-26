@@ -23,15 +23,17 @@ definition(
 
 preferences {
 	page(name: "prefAccount", title: "HEOS")
+	page(name: "prefValidateAccount", title: "HEOS")
 	page(name: "prefListDevices", title: "HEOS")
 }
 
 def prefAccount() {
+	deleteTempAccountVerifier()
 	state.totalTries = 5
 	subscribe(location, "ssdpTerm.urn:schemas-denon-com:device:ACT-Denon:1", ssdpHandler)
 	discoverHeosDevices()
 	
-	return dynamicPage(name: "prefAccount", title: "HEOS Account Information", nextPage:"prefListDevices", uninstall:false, install: false) {
+	return dynamicPage(name: "prefAccount", title: "HEOS Account Information", nextPage:"prefValidateAccount", uninstall:false, install: false) {
 		section(""){
 			input("heosUsername", "text", title: "HEOS Username", description: "HEOS Account Username")
 			input("heosPassword", "password", title: "HEOS Password", description: "HEOS Account Password")
@@ -40,7 +42,34 @@ def prefAccount() {
 	}
 }
 
+def prefValidateAccount() {
+	def devices = getDevices()
+	def device = null
+	def nextPageName = "prefAccount"
+	def message = "Please wait while your HEOS account information is validated..."
+	if (devices.size() > 0) {
+		def deviceInfo = devices.find { true }
+		device = createHeosAccountVerificationDevice(deviceInfo.value)
+	}
+	if (device?.getDataValue("accountVerified") == "true") {
+		message = "Your account information has been validated."
+		nextPageName = "prefListDevices"
+	}
+	else if (device?.getDataValue("accountVerified") == "false") {
+		message = "Your account information is incorrect."
+		nextPageName = "prefAccount"
+	}
+
+	return dynamicPage(name: "prefValidateAccount", title: "Validating HEOS Account Information", nextPage:nextPageName, uninstall:false, install: false, refreshInterval: 15) {
+		section
+		{
+			paragraph "${message}"
+		}
+	}
+}
+
 def prefListDevices() {
+	deleteTempAccountVerifier()
 	verifyHeosDevices()
 	discoverHeosDevices()
 	return dynamicPage(name: "prefListDevices", title: "Devices", install: true, uninstall: true, refreshInterval: 15) {
@@ -243,6 +272,14 @@ def initialize() {
 
 	cleanupChildDevices()
 	createChildDevices()
+	
+	deleteTempAccountVerifier()
+}
+
+def deleteTempAccountVerifier() {
+	def device = getChildDevice("heos:temp:" + app.getId())
+	if (device)
+		deleteChildDevice(device.deviceNetworkId)
 }
 
 
@@ -257,6 +294,17 @@ def createChildDevices() {
 		device.initialize()
 		i++
 	}
+}
+
+def createHeosAccountVerificationDevice(deviceInfo) {
+	def device = getChildDevice("heos:temp:" + app.getId())
+	if (!device) {
+		device = addChildDevice("dcm.heos", "Denon HEOS Speaker", "heos:temp:" + app.getId(), 1234, ["name": "Temp HEOS Account Verifier", isComponent: false])
+		device.setMaster(true)
+		device.setDeviceDetails(deviceInfo.ip, 1255)
+		device.verifyAccount()
+	}
+	return device
 }
 
 def cleanupChildDevices()
