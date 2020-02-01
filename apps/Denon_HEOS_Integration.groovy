@@ -7,6 +7,7 @@
  *
  * Revision History
  * v 2020.01.26 - Initial Release
+ * v 2020.02.01 - Fixed an issue when passwords contained non-url safe characters
  *
  */
 
