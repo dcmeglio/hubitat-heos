@@ -206,7 +206,7 @@ def sendHeosMessage(String msg) {
 def loginHeosAccount()
 {
 	def username = parent.getUsername()
-	def password = parent.getPassword()
+	def password = parent.getPassword().replaceAll("%","%25").replaceAll("&","%26").replaceAll("=","%3D")
 	sendHeosMessage("heos://system/sign_in?un=${username}&pw=${password}")
 }
 
