@@ -8,6 +8,7 @@
  * Revision History
  * v 2020.01.26 - Initial Release
  * v 2020.02.01 - Fixed an issue when passwords contained non-url safe characters
+ * v 2020.02.15 - Added individual attributes for track/artist/album
  *
  */
 
@@ -222,6 +223,9 @@ def distributeMessage(command, payload) {
 		def device = findDeviceByPid(payload.pid)
 		
 		device.sendEvent(name: "trackDescription", value: "${payload.song} by ${payload.artist} from ${payload.album}")
+		device.sendEvent(name: "artist", value: "${payload.artist}")
+		device.sendEvent(name: "album", value: "${payload.album}")
+		device.sendEvent(name: "track", value: "${payload.song}")
 		device.sendEvent(name: "trackData", value: groovy.json.JsonOutput.toJson(payload))
 	}
 }
