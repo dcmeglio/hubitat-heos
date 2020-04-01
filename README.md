@@ -1,5 +1,5 @@
 # hubitat-heos
-Denon HEOS Integration for Hubitat. Allows you to interact with all of your HEOS devices using the HEOS CLI interface.
+Denon HEOS Integration for Hubitat. This allows you to interact with all of your HEOS devices using the HEOS CLI interface.
  
 ## Devices
 You must install the following device drivers for this to work
@@ -25,5 +25,10 @@ You will be able to control mute/unmute, volume, next/previous track, play/pause
 | Tidal        | Artist, Album, Track, Playlist |
 | TuneIn       | Station                        |
 
+## Donations
+If you find this app useful, please consider making a [donation](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7LBRPJRLJSDDN&source=url)! 
+
 ## Revision History
 * 2020.01.26 - Initial Release
+* 2020.02.01 - Fixed an issue when passwords contained non-url safe characters
+* 2020.02.15 - Added individual attributes for track/artist/album
