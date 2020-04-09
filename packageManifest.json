@@ -1,0 +1,25 @@
+{
+	"packageName": "Denon HEOS Integration",
+	"minimumHEVersion": "2.1.9",
+	"author": "Dominick Meglio",
+	"version": "1.0.0",
+	"dateReleased": "2020-04-09",
+	"apps" : [
+		{
+			"id" : "9265df28-d908-41a8-972f-f1030b38ad39",
+			"name": "Denon HEOS Integration",
+			"namespace": "dcm.heos",
+			"location": "https://raw.githubusercontent.com/dcmeglio/hubitat-heos/master/apps/Denon_HEOS_Integration.groovy",
+			"required": true
+		}
+	],
+	"drivers": [
+		{
+			"id" : "bb4cb90e-61ad-476b-8ccc-d7dd166e5465",
+			"name": "Denon HEOS Speaker",
+			"namespace": "dcm.heos",
+			"location": "https://raw.githubusercontent.com/dcmeglio/hubitat-heos/master/drivers/Denon_HEOS_Speaker.groovy",
+			"required": true
+		}
+	]
+}
