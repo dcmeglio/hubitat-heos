@@ -197,8 +197,19 @@ def distributeMessage(command, payload) {
 	}
 	else if (command == "event/player_state_changed" || command == "player/get_play_state") {
 		def device = findDeviceByPid(payload.pid)
-		
-		device.sendEvent(name:"status", value: payload.state)
+		def statusStr = ""
+		switch (payload.state) {
+			case "play":
+				statusStr = "playing"
+				break
+			case "stop":
+				statusStr = "stopped"
+				break
+			case "pause":
+				statusStr = "paused"
+				break
+		}
+		device.sendEvent(name:"status", value: statusStr)
 	}
 	else if (command == "player/get_volume") {
 		def device = findDeviceByPid(payload.pid)

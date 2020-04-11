@@ -2,8 +2,9 @@
 	"packageName": "Denon HEOS Integration",
 	"minimumHEVersion": "2.1.9",
 	"author": "Dominick Meglio",
-	"version": "1.0.0",
-	"dateReleased": "2020-04-09",
+	"version": "1.0.1",
+	"dateReleased": "2020-04-11",
+	"releaseNotes": "Fixed a bug where play status wasn't properly showing on dashboard tiles",
 	"apps" : [
 		{
 			"id" : "9265df28-d908-41a8-972f-f1030b38ad39",
