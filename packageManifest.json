@@ -2,9 +2,9 @@
 	"packageName": "Denon HEOS Integration",
 	"minimumHEVersion": "2.1.9",
 	"author": "Dominick Meglio",
-	"version": "1.0.1",
-	"dateReleased": "2020-04-11",
-	"releaseNotes": "Fixed a bug where play status wasn't properly showing on dashboard tiles",
+	"version": "1.1.0",
+	"dateReleased": "2020-04-12",
+	"releaseNotes": "Added an albumArt attribute. The height and width can be configured in the app.",
 	"apps" : [
 		{
 			"id" : "9265df28-d908-41a8-972f-f1030b38ad39",

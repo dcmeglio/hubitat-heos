@@ -9,6 +9,8 @@
  * v 2020.01.26 - Initial Release
  * v 2020.02.01 - Fixed an issue when passwords contained non-url safe characters
  * v 2020.02.15 - Added individual attributes for track/artist/album
+ * v 2020.02.11 - Fixed a bug where the status text was wrong preventing dashboard tiles from working properly
+ * v 2020.02.12 - Added the ability to pull album art as an attribute
  *
  */
 
@@ -37,9 +39,11 @@ def prefAccount() {
 	discoverHeosDevices()
 	
 	return dynamicPage(name: "prefAccount", title: "HEOS Account Information", nextPage:"prefValidateAccount", uninstall:false, install: false) {
-		section(""){
+		section {
 			input("heosUsername", "text", title: "HEOS Username", description: "HEOS Account Username")
 			input("heosPassword", "password", title: "HEOS Password", description: "HEOS Account Password")
+			input("albumArtWidth", "number", title: "Album art width", defaultValue: 100)
+			input("albumArtHeight", "number", title: "Album art height", defaultValue: 100)
             input("debugOutput", "bool", title: "Enable debug logging?", defaultValue: true, displayDuringSetup: false, required: false)
 		}
 	}
@@ -239,6 +243,7 @@ def distributeMessage(command, payload) {
 		device.sendEvent(name: "album", value: "${payload.album}")
 		device.sendEvent(name: "track", value: "${payload.song}")
 		device.sendEvent(name: "trackData", value: groovy.json.JsonOutput.toJson(payload))
+		device.sendEvent(name: "albumArt", value: "<img src='${payload.image_url}' width=${albumArtWidth ?: 100} height=${albumArtHeight ?: 100}>")
 	}
 }
 

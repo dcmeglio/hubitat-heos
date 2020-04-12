@@ -16,6 +16,7 @@ metadata {
 		attribute "artist", "STRING"
 		attribute "album", "STRING"
 		attribute "track", "STRING"
+		attribute "albumArt", "STRING"
     }
 }
 

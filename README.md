@@ -32,3 +32,5 @@ If you find this app useful, please consider making a [donation](https://www.pay
 * 2020.01.26 - Initial Release
 * 2020.02.01 - Fixed an issue when passwords contained non-url safe characters
 * 2020.02.15 - Added individual attributes for track/artist/album
+* 2020.02.11 - Fixed a bug where the status text was wrong preventing dashboard tiles from working properly
+* 2020.02.12 - Added the ability to pull album art as an attribute
