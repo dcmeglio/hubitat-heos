@@ -90,7 +90,7 @@ def parse(message) {
 		updateDataValue("accountVerified", "false")
 		telnetClose()
 	}
-	else if (json.heos.result == "success" || json.heos.result == null) {
+	else if (json.heos.result == "success" || json.heos.result == null || (json.heos.result == "fail" && json.heos.command == "player/clear_queue")) {
 		if (json.heos.command == "player/get_players") {
 			parent.distributeMessage(json.heos.command, json.payload)
 			registerHeosChangeEvents()
@@ -139,6 +139,14 @@ def parse(message) {
 		else if (json.heos.command == "browse/get_search_criteria") {
 			def sid = parseHeosQueryString(json.heos.message).sid.toInteger()
 			state.searchCriteria[sid] = json.payload
+		}
+		else if (json.heos.command == "player/clear_queue") {
+		log.debug json.heos.message
+			if (!json.heos.message.startsWith("command under process")) {
+				def query = parseHeosQueryString(json.heos.message)
+				log.debug query
+				sendHeosMessage("heos://browse/play_stream?pid=${query.pid}&url=${query.url}")
+			}
 		}
 		else if (json.heos.command == "browse/browse") {
 			if (!json.heos.message.startsWith("command under process")) {
@@ -297,9 +305,7 @@ def stop() {
 }
 
 def playTrack(uri) {
-	clearQueue()
-	def pid = getDataValue("pid")
-	sendHeosMessage("heos://browse/play_stream?pid=${pid}&url=${uri}")
+	clearQueue(uri)
 }
 
 def restoreTrack(uri) {
@@ -315,7 +321,6 @@ def setTrack(uri) {
 }
 
 def playText(text) {
-	clearQueue()
 	def ttsTrack = textToSpeech(text)
 	playTrack(ttsTrack.uri)
 }
@@ -436,7 +441,7 @@ def getCidBySourceAndType(sid, type) {
 			type = "Playlists"
 	}
 	else if (sid == 1) {
-		if (type == "Station"  || type == "Playlist")
+		if (type == "Station" || type == "Playlist")
 			type = "A-Z"
 	}
 
@@ -448,7 +453,7 @@ def getCidBySourceAndType(sid, type) {
 	return null
 }
 
-def clearQueue() {
+def clearQueue(url) {
 	def pid = getDataValue("pid")
-	sendHeosMessage("heos://player/clear_queue?pid=${pid}")
+	sendHeosMessage("heos://player/clear_queue?pid=${pid}&url=${url}")
 }
