@@ -20,6 +20,7 @@ You will be able to control mute/unmute, volume, next/previous track, play/pause
 | Deezer       | Artist, Album, Track           |
 | iHeartRadio  | Artist, Track                  |
 | Napster      | Artist, Album, Track           |
+| Pandora      | Station, Playlist
 | Rhapsody     | Artist, Album, Track           |
 | Soundcloud   | Artist, Track                  |
 | Tidal        | Artist, Album, Track, Playlist |
@@ -34,3 +35,4 @@ If you find this app useful, please consider making a [donation](https://www.pay
 * 2020.02.15 - Added individual attributes for track/artist/album
 * 2020.02.11 - Fixed a bug where the status text was wrong preventing dashboard tiles from working properly
 * 2020.02.12 - Added the ability to pull album art as an attribute
+* 2020.04.29 - Added support for playing stations on Pandora

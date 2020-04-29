@@ -7,7 +7,7 @@ metadata {
 		capability "SpeechSynthesis"
 		capability "Initialize"
 		
-		command "playTopResult", [[name:"Source*","type":"ENUM","description":"Source","constraints":["Rhapsody", "TuneIn", "Deezer", "Napster", "iHeartRadio", "Soundcloud", "Tidal", "Amazon Music"]],
+		command "playTopResult", [[name:"Source*","type":"ENUM","description":"Source","constraints":["Pandora", "Rhapsody", "TuneIn", "Deezer", "Napster", "iHeartRadio", "Soundcloud", "Tidal", "Amazon Music"]],
 		[name:"Type*","type":"ENUM","description":"Type","constraints":["Station", "Artist", "Album", "Track", "Playlist"]],
 		[name:"Search*","type":"STRING",description:"Search"]]
 		command "playPreset", [[name:"Preset*","type":"NUMBER",description:"Preset"]]
@@ -72,6 +72,7 @@ def getHeosSearchCriteria()
 	sendHeosMessage("heos://browse/get_search_criteria?sid=7")
 	sendHeosMessage("heos://browse/get_search_criteria?sid=9")
 	sendHeosMessage("heos://browse/get_search_criteria?sid=10")
+	sendHeosMessage("heos://browse/browse?sid=1")
 	sendHeosMessage("heos://browse/browse?sid=13")
 	 
 }
@@ -361,11 +362,20 @@ def refresh() {
 def internalPlayTopResult(pid, source, type, search) {
 	if (getDataValue("master") == "true") {
 		def sources = 
-		["Rhapsody":2, "TuneIn":3, "Deezer":5, "Napster":6, "iHeartRadio":7, "Soundcloud":9, "Tidal":10, "Amazon Music":13]
+		["Pandora":1, "Rhapsody":2, "TuneIn":3, "Deezer":5, "Napster":6, "iHeartRadio":7, "Soundcloud":9, "Tidal":10, "Amazon Music":13]
 		
 		def sid = sources[source]
 		
 		if (source == "Amazon Music") {
+			def cid = getCidBySourceAndType(sid, type)
+			if (cid != null) {
+				state.searchString = search.toLowerCase()
+				sendHeosMessage("heos://browse/browse?sid=${sid}&cid=${cid}&pid=${pid}")
+			}
+			else
+				log.error "${type} search not supported by ${source}"
+		}
+		else if (source == "Pandora") {
 			def cid = getCidBySourceAndType(sid, type)
 			if (cid != null) {
 				state.searchString = search.toLowerCase()
@@ -418,11 +428,18 @@ def getScidBySourceAndType(sid, type) {
 }
 
 def getCidBySourceAndType(sid, type) {
-	
-	if (type == "Station")
-		type = "Prime Stations"
-	else if (type == "Playlist")
-		type = "Playlists"
+
+	if (sid == 13) {
+		if (type == "Station")
+			type = "Prime Stations"
+		else if (type == "Playlist")
+			type = "Playlists"
+	}
+	else if (sid == 1) {
+		if (type == "Station"  || type == "Playlist")
+			type = "A-Z"
+	}
+
 	for (container in state.browseCriteria."$sid")
 	{
 		if (container.name == type)
