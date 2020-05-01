@@ -2,11 +2,11 @@
 	"packageName": "Denon HEOS Integration",
 	"minimumHEVersion": "2.1.9",
 	"author": "Dominick Meglio",
-	"version": "1.1.1",
-	"dateReleased": "2020-04-21",
+	"version": "1.2.0",
+	"dateReleased": "2020-04-30",
 	"documentationLink": "https://github.com/dcmeglio/hubitat-heos/blob/master/README.md",
 	"communityLink": "https://community.hubitat.com/t/release-denon-heos-integration/32710",
-	"releaseNotes": "Added documentation and community links",
+	"releaseNotes": "playTopResult now works with Pandora and fixed some bugs where the play queue wasn't always clearing out.",
 	"apps" : [
 		{
 			"id" : "9265df28-d908-41a8-972f-f1030b38ad39",
