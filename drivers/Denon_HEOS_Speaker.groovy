@@ -7,7 +7,7 @@ metadata {
 		capability "SpeechSynthesis"
 		capability "Initialize"
 		
-		command "playTopResult", [[name:"Source*","type":"ENUM","description":"Source","constraints":["Rhapsody", "TuneIn", "Deezer", "Napster", "iHeartRadio", "Soundcloud", "Tidal", "Amazon Music"]],
+		command "playTopResult", [[name:"Source*","type":"ENUM","description":"Source","constraints":["Pandora", "Rhapsody", "TuneIn", "Deezer", "Napster", "iHeartRadio", "Soundcloud", "Tidal", "Amazon Music"]],
 		[name:"Type*","type":"ENUM","description":"Type","constraints":["Station", "Artist", "Album", "Track", "Playlist"]],
 		[name:"Search*","type":"STRING",description:"Search"]]
 		command "playPreset", [[name:"Preset*","type":"NUMBER",description:"Preset"]]
@@ -72,6 +72,7 @@ def getHeosSearchCriteria()
 	sendHeosMessage("heos://browse/get_search_criteria?sid=7")
 	sendHeosMessage("heos://browse/get_search_criteria?sid=9")
 	sendHeosMessage("heos://browse/get_search_criteria?sid=10")
+	sendHeosMessage("heos://browse/browse?sid=1")
 	sendHeosMessage("heos://browse/browse?sid=13")
 	 
 }
@@ -89,7 +90,7 @@ def parse(message) {
 		updateDataValue("accountVerified", "false")
 		telnetClose()
 	}
-	else if (json.heos.result == "success" || json.heos.result == null) {
+	else if (json.heos.result == "success" || json.heos.result == null || (json.heos.result == "fail" && json.heos.command == "player/clear_queue")) {
 		if (json.heos.command == "player/get_players") {
 			parent.distributeMessage(json.heos.command, json.payload)
 			registerHeosChangeEvents()
@@ -138,6 +139,14 @@ def parse(message) {
 		else if (json.heos.command == "browse/get_search_criteria") {
 			def sid = parseHeosQueryString(json.heos.message).sid.toInteger()
 			state.searchCriteria[sid] = json.payload
+		}
+		else if (json.heos.command == "player/clear_queue") {
+		log.debug json.heos.message
+			if (!json.heos.message.startsWith("command under process")) {
+				def query = parseHeosQueryString(json.heos.message)
+				log.debug query
+				sendHeosMessage("heos://browse/play_stream?pid=${query.pid}&url=${query.url}")
+			}
 		}
 		else if (json.heos.command == "browse/browse") {
 			if (!json.heos.message.startsWith("command under process")) {
@@ -296,9 +305,7 @@ def stop() {
 }
 
 def playTrack(uri) {
-	clearQueue()
-	def pid = getDataValue("pid")
-	sendHeosMessage("heos://browse/play_stream?pid=${pid}&url=${uri}")
+	clearQueue(uri)
 }
 
 def restoreTrack(uri) {
@@ -314,7 +321,6 @@ def setTrack(uri) {
 }
 
 def playText(text) {
-	clearQueue()
 	def ttsTrack = textToSpeech(text)
 	playTrack(ttsTrack.uri)
 }
@@ -361,11 +367,20 @@ def refresh() {
 def internalPlayTopResult(pid, source, type, search) {
 	if (getDataValue("master") == "true") {
 		def sources = 
-		["Rhapsody":2, "TuneIn":3, "Deezer":5, "Napster":6, "iHeartRadio":7, "Soundcloud":9, "Tidal":10, "Amazon Music":13]
+		["Pandora":1, "Rhapsody":2, "TuneIn":3, "Deezer":5, "Napster":6, "iHeartRadio":7, "Soundcloud":9, "Tidal":10, "Amazon Music":13]
 		
 		def sid = sources[source]
 		
 		if (source == "Amazon Music") {
+			def cid = getCidBySourceAndType(sid, type)
+			if (cid != null) {
+				state.searchString = search.toLowerCase()
+				sendHeosMessage("heos://browse/browse?sid=${sid}&cid=${cid}&pid=${pid}")
+			}
+			else
+				log.error "${type} search not supported by ${source}"
+		}
+		else if (source == "Pandora") {
 			def cid = getCidBySourceAndType(sid, type)
 			if (cid != null) {
 				state.searchString = search.toLowerCase()
@@ -418,11 +433,18 @@ def getScidBySourceAndType(sid, type) {
 }
 
 def getCidBySourceAndType(sid, type) {
-	
-	if (type == "Station")
-		type = "Prime Stations"
-	else if (type == "Playlist")
-		type = "Playlists"
+
+	if (sid == 13) {
+		if (type == "Station")
+			type = "Prime Stations"
+		else if (type == "Playlist")
+			type = "Playlists"
+	}
+	else if (sid == 1) {
+		if (type == "Station" || type == "Playlist")
+			type = "A-Z"
+	}
+
 	for (container in state.browseCriteria."$sid")
 	{
 		if (container.name == type)
@@ -431,7 +453,7 @@ def getCidBySourceAndType(sid, type) {
 	return null
 }
 
-def clearQueue() {
+def clearQueue(url) {
 	def pid = getDataValue("pid")
-	sendHeosMessage("heos://player/clear_queue?pid=${pid}")
+	sendHeosMessage("heos://player/clear_queue?pid=${pid}&url=${url}")
 }
