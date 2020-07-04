@@ -13,7 +13,8 @@
 			"name": "Denon HEOS Integration",
 			"namespace": "dcm.heos",
 			"location": "https://raw.githubusercontent.com/dcmeglio/hubitat-heos/master/apps/Denon_HEOS_Integration.groovy",
-			"required": true
+			"required": true,
+			"primary": true
 		}
 	],
 	"drivers": [
