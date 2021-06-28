@@ -144,7 +144,7 @@ def ssdpHandler(evt) {
 			if (ssdpDeviceDetails.key != ipString) {
 				logDebug "Detected an IP change from ${ssdpDeviceDetails.key} to ${ipString}"
 				devices.remove(ssdpDeviceDetails.key)
-				def heDevice = getChildDevice("heos:"+ssdpDeviceDetails.value.mac)
+				def heDevice = getChildDevice("heos:"+ getDeviceNetworkId(ssdpDeviceDetails.value))
 				if (heDevice) {
 					heDevice.setDeviceDetails(ipString, 1255)
 					if (heDevice.getDataValue("master") == "true") {
@@ -203,49 +203,61 @@ def distributeMessage(command, payload) {
 	}
 	else if (command == "event/player_state_changed" || command == "player/get_play_state") {
 		def device = findDeviceByPid(payload.pid)
-		def statusStr = ""
-		switch (payload.state) {
-			case "play":
-				statusStr = "playing"
-				break
-			case "stop":
-				statusStr = "stopped"
-				break
-			case "pause":
-				statusStr = "paused"
-				break
+
+		if (device != null) {
+			def statusStr = ""
+			switch (payload.state) {
+				case "play":
+					statusStr = "playing"
+					break
+				case "stop":
+					statusStr = "stopped"
+					break
+				case "pause":
+					statusStr = "paused"
+					break
+			}
+			device.sendEvent(name:"status", value: statusStr)
 		}
-		device.sendEvent(name:"status", value: statusStr)
 	}
 	else if (command == "player/get_volume") {
 		def device = findDeviceByPid(payload.pid)
-		device.sendEvent(name:"volume", value: payload.level.toInteger())
+
+		if (device != null)
+			device.sendEvent(name:"volume", value: payload.level.toInteger())
 	}
 	else if (command == "player/get_mute") {
 		def device = findDeviceByPid(payload.pid)
-		if (payload.state == "on") 
-			device.sendEvent(name: "mute", value: "muted")
-		else if (payload.state == "off")
-			device.sendEvent(name: "mute", value: "unmuted")
+
+		if (device != null) {
+			if (payload.state == "on") 
+				device.sendEvent(name: "mute", value: "muted")
+			else if (payload.state == "off")
+				device.sendEvent(name: "mute", value: "unmuted")
+		}
 	}
 	else if (command == "event/player_volume_changed") {
 		def device = findDeviceByPid(payload.pid)
 
-		if (payload.mute == "on") 
-			device.sendEvent(name: "mute", value: "muted")
-		else if (payload.mute == "off")
-			device.sendEvent(name: "mute", value: "unmuted")
-		device.sendEvent(name:"volume", value: payload.level.toInteger())
+		if (device != null) {
+			if (payload.mute == "on") 
+				device.sendEvent(name: "mute", value: "muted")
+			else if (payload.mute == "off")
+				device.sendEvent(name: "mute", value: "unmuted")
+			device.sendEvent(name:"volume", value: payload.level.toInteger())
+		}
 	}
 	else if (command == "player/get_now_playing_media") {
 		def device = findDeviceByPid(payload.pid)
 		
-		device.sendEvent(name: "trackDescription", value: "${payload.song} by ${payload.artist} from ${payload.album}")
-		device.sendEvent(name: "artist", value: "${payload.artist}")
-		device.sendEvent(name: "album", value: "${payload.album}")
-		device.sendEvent(name: "track", value: "${payload.song}")
-		device.sendEvent(name: "trackData", value: groovy.json.JsonOutput.toJson(payload))
-		device.sendEvent(name: "albumArt", value: "<img src='${payload.image_url}' width=${albumArtWidth ?: 100} height=${albumArtHeight ?: 100}>")
+		if (device != null) {
+			device.sendEvent(name: "trackDescription", value: "${payload.song} by ${payload.artist} from ${payload.album}")
+			device.sendEvent(name: "artist", value: "${payload.artist}")
+			device.sendEvent(name: "album", value: "${payload.album}")
+			device.sendEvent(name: "track", value: "${payload.song}")
+			device.sendEvent(name: "trackData", value: groovy.json.JsonOutput.toJson(payload))
+			device.sendEvent(name: "albumArt", value: "<img src='${payload.image_url}' width=${albumArtWidth ?: 100} height=${albumArtHeight ?: 100}>")
+		}
 	}
 }
 
@@ -334,9 +346,9 @@ def deleteTempAccountVerifier() {
 def createChildDevices() {
 	def i = 0
 	for (speaker in speakers) {
-		def device = getChildDevice("heos:" + state.devices[speaker].mac)
+		def device = getChildDevice("heos:" + getDeviceNetworkId(state.devices[speaker]))
 		if (!device)
-            device = addChildDevice("dcm.heos", "Denon HEOS Speaker", "heos:" + state.devices[speaker].mac, 1234, ["name": state.devices[speaker].name, isComponent: false])
+            device = addChildDevice("dcm.heos", "Denon HEOS Speaker", "heos:" + getDeviceNetworkId(state.devices[speaker]), 1234, ["name": state.devices[speaker].name, isComponent: false])
 		device.setMaster(i == 0)
 		device.setDeviceDetails(state.devices[speaker].ip, 1255)
 		device.initialize()
@@ -364,7 +376,7 @@ def cleanupChildDevices()
 		def deviceFound = false
 		for (speaker in speakers)
 		{
-			if (state.devices[speaker].mac == deviceId)
+			if (getDeviceNetworkId(state.devices[speaker]) == deviceId)
 			{
 				deviceFound = true
 				break
@@ -407,4 +419,10 @@ def displayFooter(){
 def getFormat(type, myText=""){			// Modified from @Stephack Code   
     if(type == "line") return "<hr style='background-color:#1A77C9; height: 1px; border: 0;'>"
     if(type == "title") return "<h2 style='color:#1A77C9;font-weight: bold'>${myText}</h2>"
+}
+
+def getDeviceNetworkId(dev) {
+	if (dev.mac != null && dev.mac != "null")
+		return dev.mac
+	return dev.networkAddress
 }
