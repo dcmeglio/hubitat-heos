@@ -436,7 +436,7 @@ def getScidBySourceAndType(sid, type) {
 }
 
 def hasAmazonMusicUnlimited() {
-	return getCidBySourceAndType(13, "Try Amazon Music Unlimited") != null
+	return getCidBySourceAndType(13, "Try Amazon Music Unlimited") == null
 }
 
 def getCidBySourceAndType(sid, type) {
