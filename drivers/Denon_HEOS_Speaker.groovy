@@ -351,8 +351,11 @@ def playTrackAndResume(trackuri, volumelevel) {
 	playTrack(trackuri, volumelevel)
 }
 
-def speak(text) {
-	playText(text)
+def speak(text, volume = null, awsPollyVoiceName = null) {
+	if (volume != null)
+		setVolume(volume)
+	def ttsTrack = textToSpeech(text, awsPollyVoiceName)
+	playTrack(ttsTrack.uri)
 }
 
 def refresh() {
@@ -432,11 +435,18 @@ def getScidBySourceAndType(sid, type) {
 	return null
 }
 
-def getCidBySourceAndType(sid, type) {
+def hasAmazonMusicUnlimited() {
+	return getCidBySourceAndType(13, "Try Amazon Music Unlimited") == null
+}
 
+def getCidBySourceAndType(sid, type) {
 	if (sid == 13) {
-		if (type == "Station")
-			type = "Prime Stations"
+		if (type == "Station") {
+			if (!hasAmazonMusicUnlimited())
+				type = "Prime Stations"
+			else
+				type = "Stations"
+		}
 		else if (type == "Playlist")
 			type = "Playlists"
 	}
